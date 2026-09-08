@@ -1,0 +1,348 @@
+basePath: /api/v1
+definitions:
+  handler.CreateOrderItem:
+    properties:
+      menu_item_id:
+        type: string
+      quantity:
+        type: integer
+    required:
+    - menu_item_id
+    - quantity
+    type: object
+  handler.CreateOrderRequest:
+    properties:
+      delivery_address:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/handler.CreateOrderItem'
+        minItems: 1
+        type: array
+      restaurant_id:
+        type: string
+    required:
+    - delivery_address
+    - items
+    - restaurant_id
+    type: object
+  model.MenuItem:
+    properties:
+      available:
+        type: boolean
+      created_at:
+        type: string
+      description:
+        type: string
+      external_id:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      price:
+        type: integer
+      restaurant_id:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  model.Order:
+    properties:
+      created_at:
+        type: string
+      delivery_address:
+        type: string
+      id:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/model.OrderItem'
+        type: array
+      restaurant_id:
+        type: string
+      status:
+        $ref: '#/definitions/model.OrderStatus'
+      total_price:
+        type: integer
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  model.OrderItem:
+    properties:
+      id:
+        type: string
+      menu_item_id:
+        type: string
+      name:
+        type: string
+      order_id:
+        type: string
+      price:
+        type: integer
+      quantity:
+        type: integer
+    type: object
+  model.OrderStatus:
+    enum:
+    - pending
+    - accepted
+    - rejected
+    - preparing
+    - ready
+    - delivering
+    - delivered
+    - cancelled
+    type: string
+    x-enum-varnames:
+    - OrderStatusPending
+    - OrderStatusAccepted
+    - OrderStatusRejected
+    - OrderStatusPreparing
+    - OrderStatusReady
+    - OrderStatusDelivering
+    - OrderStatusDelivered
+    - OrderStatusCancelled
+  model.Restaurant:
+    properties:
+      address:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      external_id:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      status:
+        $ref: '#/definitions/model.RestaurantStatus'
+      updated_at:
+        type: string
+    type: object
+  model.RestaurantStatus:
+    enum:
+    - active
+    - inactive
+    type: string
+    x-enum-varnames:
+    - RestaurantStatusActive
+    - RestaurantStatusInactive
+host: localhost:8080
+info:
+  contact: {}
+  description: MVP API for restaurants and food delivery orders.
+  title: Kitchen API
+  version: "1.0"
+paths:
+  /orders:
+    post:
+      consumes:
+      - application/json
+      description: Create a new food delivery order. The order is sent to the restaurant
+        service for acceptance.
+      parameters:
+      - description: User UUID
+        example: 99999999-9999-9999-9999-999999999999
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Order data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.CreateOrderRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Order'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "502":
+          description: Bad Gateway
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create order
+      tags:
+      - orders
+  /orders/{id}:
+    get:
+      description: Get an order by ID including its items.
+      parameters:
+      - description: Order UUID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Order'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get order
+      tags:
+      - orders
+  /restaurants:
+    get:
+      description: Get a list of all active restaurants.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Restaurant'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List restaurants
+      tags:
+      - restaurants
+  /restaurants/{id}:
+    get:
+      description: Get an active restaurant by ID.
+      parameters:
+      - description: Restaurant UUID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Restaurant'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get restaurant
+      tags:
+      - restaurants
+  /restaurants/{id}/menu:
+    get:
+      description: Get all available menu items for a restaurant.
+      parameters:
+      - description: Restaurant UUID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.MenuItem'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get restaurant menu
+      tags:
+      - restaurants
+  /users/{userId}/orders:
+    get:
+      description: Get all orders created by a user.
+      parameters:
+      - description: User UUID
+        format: uuid
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Order'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get user orders
+      tags:
+      - orders
+swagger: "2.0"
